@@ -10,6 +10,6 @@ namespace DAL
         {
         }
 
-        public DbSet<Product> Products { get; set; }
+        public DbSet<InventoryLog> InventoryLogs { get; set; }
     }
 }

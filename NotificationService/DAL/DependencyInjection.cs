@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DAL.DI
+namespace DAL
 {
     public static class DependencyInjection
     {

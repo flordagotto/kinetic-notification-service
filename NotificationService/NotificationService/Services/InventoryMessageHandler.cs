@@ -1,4 +1,6 @@
 ﻿using DAL;
+using DAL.Entities;
+using DTOs;
 
 public class InventoryMessageHandler
 {
@@ -9,9 +11,9 @@ public class InventoryMessageHandler
         _context = context;
     }
 
-    public async Task HandleMessage(string eventType, ProductDto product)
+    public async Task HandleMessage(string eventType, EventMessage message)
     {
-        var notification = new InventoryNotification
+        var notification = new InventoryLog
         {
             EventType = eventType,
             ProductId = product.Id.ToString(),
