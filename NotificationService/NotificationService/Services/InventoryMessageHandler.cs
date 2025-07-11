@@ -1,27 +1,39 @@
-﻿using DAL;
-using DAL.Entities;
+﻿using DAL.Entities;
+using DAL.Repositories;
 using DTOs;
 
 public class InventoryMessageHandler
 {
-    private readonly NotificationsDbContext _context;
+    private readonly INotificationRepository _notificationRepository;
 
-    public InventoryMessageHandler(NotificationsDbContext context)
+    public InventoryMessageHandler(INotificationRepository notificationRepository)
     {
-        _context = context;
+        _notificationRepository = notificationRepository;
     }
 
     public async Task HandleMessage(string eventType, EventMessage message)
     {
-        var notification = new InventoryLog
-        {
-            EventType = eventType,
-            ProductId = product.Id.ToString(),
-            ProductName = product.Name,
-            ReceivedAt = DateTime.UtcNow
-        };
+        //var notification = new InventoryLog
+        //{
+        //    EventType = eventType,
+        //    ProductId = product.Id.ToString(),
+        //    ProductName = product.Name,
+        //    ReceivedAt = DateTime.UtcNow
+        //};
 
-        _context.Notifications.Add(notification);
-        await _context.SaveChangesAsync();
+        //_notificationRepository.Notifications.Add(notification);
+        //await _context.SaveChangesAsync();
     }
+
+    private InventoryEventType MapEventType(ProductEventType dtoType)
+    {
+        return dtoType switch
+        {
+            ProductEventType.Created => InventoryEventType.Created,
+            ProductEventType.Updated => InventoryEventType.Updated,
+            ProductEventType.Deleted => InventoryEventType.Deleted,
+            _ => throw new ArgumentOutOfRangeException(nameof(dtoType))
+        };
+    }
+
 }

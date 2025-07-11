@@ -5,7 +5,6 @@ namespace DAL.Repositories
     public interface INotificationRepository
     {
         Task Add(InventoryLog product);
-        Task<IEnumerable<InventoryLog>> Get();
     }
 
     public class NotificationRepository : INotificationRepository
@@ -18,11 +17,6 @@ namespace DAL.Repositories
         }
 
         public Task Add(InventoryLog product)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<IEnumerable<InventoryLog>> Get()
         {
             throw new NotImplementedException();
         }
