@@ -143,7 +143,7 @@ namespace NotificationService.Services
                 _logger.LogInformation($"Consumer instantiated for queue: {queue}");
             }
 
-            await Task.CompletedTask;
+            await Task.Delay(Timeout.Infinite, stoppingToken);
         }
 
         private async Task SendToErrorQueue(ReadOnlyMemory<byte> body)

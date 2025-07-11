@@ -1,4 +1,5 @@
 ﻿using DAL;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,13 +21,17 @@ internal class Program
             services.AddInfrastructureServices(context.Configuration.GetConnectionString("DefaultConnection"));
             services.AddApplicationServices();
 
-            // Configurar logger
             services.AddLogging(configure => configure.AddConsole());
 
-            // Configurar servicio consumidor
             services.AddHostedService<RabbitMqConsumer>();
         })
         .Build();
+
+        using (var scope = host.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<NotificationsDbContext>();
+            db.Database.Migrate();
+        }
 
         await host.RunAsync();
      }
