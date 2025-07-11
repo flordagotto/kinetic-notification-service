@@ -3,7 +3,7 @@
     public class InventoryLog
     {
         public Guid Id { get; set; }
-        public string ProductId { get; set; } = null!;
+        public Guid ProductId { get; set; }
         public string Description { get; set; } = null!;
         public InventoryEventType EventType { get; set; }
         public DateTime EventDate { get; set; }

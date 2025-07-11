@@ -2,7 +2,7 @@
 {
     public class EventMessage
     {
-        public Guid Id { get; set; }
+        public Guid ProductId { get; set; }
         public ProductEventType EventType { get; set; }
         public DateTime EventDate { get; set; }
     }

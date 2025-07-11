@@ -7,7 +7,6 @@ using Polly;
 using Polly.Wrap;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using RabbitMQ.Client.Exceptions;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -29,6 +28,7 @@ namespace NotificationService.Services
         private const string PRODUCT_CREATED_QUEUE = "ProductCreated";
         private const string PRODUCT_UPDATED_QUEUE = "ProductUpdated";
         private const string PRODUCT_DELETED_QUEUE = "ProductDeleted";
+        private const string DEAD_LETTER_QUEUE_ROUTING_KEY = "error";
 
         private const string EXCHANGE_NAME = "inventory_exchange";
 
@@ -54,17 +54,14 @@ namespace NotificationService.Services
             };
 
             var retryPolicy = Policy
-                .Handle<BrokerUnreachableException>()
-                .Or<Exception>()
-                .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    (exception, timeSpan) =>
-                    {
-                        _logger.LogWarning($"Retrying RabbitMQ connection in {timeSpan.TotalSeconds}s due to: {exception.Message}");
-                    });
+            .Handle<Exception>()
+            .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
-            // retry de conexion a rabbit por si se cae y la reconexion propia de rabbit no funciona (para robustez, pero para este servicio tan pequeño es un poco innecesario)
+            var circuitBreakerPolicy = Policy
+                .Handle<Exception>()
+                .CircuitBreakerAsync(3, TimeSpan.FromSeconds(10));
 
-            _policyWrap = Policy.WrapAsync(retryPolicy);
+            _policyWrap = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy);
         }
 
         private async Task EnsureConnectionAsync()
@@ -86,6 +83,15 @@ namespace NotificationService.Services
         {
             await EnsureConnectionAsync();
 
+            var queues = new[]
+                {
+                    PRODUCT_CREATED_QUEUE,
+                    PRODUCT_UPDATED_QUEUE,
+                    PRODUCT_DELETED_QUEUE,
+                };
+
+            await _channel.ExchangeDeclareAsync(EXCHANGE_NAME, ExchangeType.Direct, durable: true);
+
             var consumer = new AsyncEventingBasicConsumer(_channel);
 
             consumer.ReceivedAsync += async (model, ea) =>
@@ -93,37 +99,61 @@ namespace NotificationService.Services
                 var body = ea.Body.ToArray();
                 var messageString = Encoding.UTF8.GetString(body);
 
-                EventMessage? eventMessage = null;
+                EventMessage eventMessage = null;
+
                 try
                 {
-                    eventMessage = JsonSerializer.Deserialize<EventMessage>(messageString);
+                    eventMessage = JsonSerializer.Deserialize<EventMessage>(messageString, _options);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error deserializing message");
-                    await _channel.BasicNackAsync(ea.DeliveryTag, false, false); 
-                    return;
+                    var attempts = ea.BasicProperties.Headers?.ContainsKey("attempts") == true
+                     ? (int)ea.BasicProperties.Headers["attempts"] + 1
+                     : 1;
+
+                    if (attempts >= 3)
+                    {
+                        _logger.LogError("Message failed 3 times, sending to DLQ");
+                        await SendToErrorQueue(body); 
+                        await _channel.BasicNackAsync(ea.DeliveryTag, false, false); 
+                        return;
+                    }
+                    else
+                    {
+                        ea.BasicProperties.Headers["attempts"] = attempts;
+                        await _channel.BasicNackAsync(ea.DeliveryTag, false, true); 
+                    }
                 }
 
                 if (eventMessage != null)
                 {
-                    if (eventMessage != null)
-                    {
-                        _logger.LogInformation($"Received message: {messageString}");
+                    _logger.LogInformation($"Message received from queue: {ea.RoutingKey}");
 
-                        using var scope = _serviceProvider.CreateScope();
-                        var logService = scope.ServiceProvider.GetRequiredService<IInventoryMessageHandler>();
-
-                        await logService.HandleMessage(eventMessage, stoppingToken);
-                    }
+                    using var scope = _serviceProvider.CreateScope();
+                    var handler = scope.ServiceProvider.GetRequiredService<IInventoryMessageHandler>();
+                    await handler.HandleMessage(eventMessage, stoppingToken);
                 }
 
                 await _channel.BasicAckAsync(ea.DeliveryTag, false);
             };
 
-            _channel.BasicConsumeAsync(queue: QUEUE_NAME, autoAck: false, consumer: consumer);
+            foreach (var queue in queues)
+            {
+                await _channel.BasicConsumeAsync(queue: queue, autoAck: false, consumer: consumer);
+                _logger.LogInformation($"Consumer instantiated for queue: {queue}");
+            }
 
             await Task.CompletedTask;
+        }
+
+        private async Task SendToErrorQueue(ReadOnlyMemory<byte> body)
+        {
+            await _channel.BasicPublishAsync(
+                exchange: EXCHANGE_NAME,
+                routingKey: DEAD_LETTER_QUEUE_ROUTING_KEY,
+                mandatory: true,
+                basicProperties: new BasicProperties { Persistent = true },
+                body: body);
         }
 
         public override void Dispose()

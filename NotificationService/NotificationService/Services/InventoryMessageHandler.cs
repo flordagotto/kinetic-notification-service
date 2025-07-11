@@ -1,6 +1,7 @@
 ﻿using DAL.Entities;
 using DAL.Repositories;
 using DTOs;
+using Microsoft.Extensions.Logging;
 
 public interface IInventoryMessageHandler
 {
@@ -10,24 +11,46 @@ public interface IInventoryMessageHandler
 public class InventoryMessageHandler : IInventoryMessageHandler
 {
     private readonly INotificationRepository _notificationRepository;
+    private readonly ILogger<InventoryMessageHandler> _logger;
 
-    public InventoryMessageHandler(INotificationRepository notificationRepository)
+    public InventoryMessageHandler(INotificationRepository notificationRepository, ILogger<InventoryMessageHandler> logger)
     {
         _notificationRepository = notificationRepository;
+        _logger = logger;
     }
 
     public async Task HandleMessage(EventMessage message, CancellationToken cancellationToken)
     {
-        //var notification = new InventoryLog
-        //{
-        //    EventType = eventType,
-        //    ProductId = product.Id.ToString(),
-        //    ProductName = product.Name,
-        //    ReceivedAt = DateTime.UtcNow
-        //};
+        try
+        {
+            var log = new InventoryLog
+            {
+                Id = Guid.NewGuid(),
+                EventType = MapEventType(message.EventType),
+                ProductId = message.ProductId,
+                Description = GetLogDescription(message),
+                EventDate = message.EventDate
+            };
 
-        //_notificationRepository.Notifications.Add(notification);
-        //await _context.SaveChangesAsync();
+            await _notificationRepository.Add(log, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message, "Error creating a product.");
+            throw;
+        }
+    }
+
+    private string GetLogDescription(EventMessage message)
+    {
+        var description = "The inventory was modified - ";
+
+        if(message.EventType == ProductEventType.Deleted)
+        {
+            return $"{description}Product with id {message.ProductId} has been deleted.";
+        }
+
+        return $"{description}Product with id {message.ProductId} has been {message.EventType}. Check the Inventory Database to see the new values.";
     }
 
     private InventoryEventType MapEventType(ProductEventType dtoType)
