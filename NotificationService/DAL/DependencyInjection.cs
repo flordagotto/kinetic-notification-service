@@ -5,7 +5,7 @@ namespace DAL
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, string connectionString)
+        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
         {
             services.AddDbContext<NotificationsDbContext>(options =>
                 options.UseSqlite("Data Source=notifications.db"));

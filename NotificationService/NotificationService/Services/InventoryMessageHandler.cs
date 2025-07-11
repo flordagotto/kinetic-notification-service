@@ -2,7 +2,12 @@
 using DAL.Repositories;
 using DTOs;
 
-public class InventoryMessageHandler
+public interface IInventoryMessageHandler
+{
+    Task HandleMessage(EventMessage message, CancellationToken cancellationToken);
+}
+
+public class InventoryMessageHandler : IInventoryMessageHandler
 {
     private readonly INotificationRepository _notificationRepository;
 
@@ -11,7 +16,7 @@ public class InventoryMessageHandler
         _notificationRepository = notificationRepository;
     }
 
-    public async Task HandleMessage(string eventType, EventMessage message)
+    public async Task HandleMessage(EventMessage message, CancellationToken cancellationToken)
     {
         //var notification = new InventoryLog
         //{
