@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 public interface IInventoryMessageHandler
 {
-    Task HandleMessage(EventMessage message, CancellationToken cancellationToken);
+    Task HandleMessage(EventMessage message);
 }
 
 public class InventoryMessageHandler : IInventoryMessageHandler
@@ -19,7 +19,7 @@ public class InventoryMessageHandler : IInventoryMessageHandler
         _logger = logger;
     }
 
-    public async Task HandleMessage(EventMessage message, CancellationToken cancellationToken)
+    public async Task HandleMessage(EventMessage message)
     {
         try
         {
@@ -32,7 +32,8 @@ public class InventoryMessageHandler : IInventoryMessageHandler
                 EventDate = message.EventDate
             };
 
-            await _notificationRepository.Add(log, cancellationToken);
+            await _notificationRepository.Add(log);
+           
         }
         catch (Exception ex)
         {

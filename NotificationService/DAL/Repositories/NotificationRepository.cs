@@ -4,7 +4,7 @@ namespace DAL.Repositories
 {
     public interface INotificationRepository
     {
-        Task Add(InventoryLog log, CancellationToken cancellationToken);
+        Task Add(InventoryLog log);
     }
 
     public class NotificationRepository : INotificationRepository
@@ -16,11 +16,11 @@ namespace DAL.Repositories
             _context = context;
         }
 
-        public async Task Add(InventoryLog log, CancellationToken cancellationToken)
+        public async Task Add(InventoryLog log)
         {
             _context.InventoryLogs.Add(log);
 
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync();
         }
     }
 }

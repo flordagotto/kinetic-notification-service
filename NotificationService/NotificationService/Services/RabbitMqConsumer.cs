@@ -110,7 +110,7 @@ namespace NotificationService.Services
                 try
                 {
                     if (!string.IsNullOrEmpty(messageString))
-                        await ProcessMessage(messageString, stoppingToken);
+                        await ProcessMessage(messageString);
 
                     await _channel.BasicAckAsync(ea.DeliveryTag, false);
                 }
@@ -170,7 +170,7 @@ namespace NotificationService.Services
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
 
-        private async Task ProcessMessage(string messageString, CancellationToken stoppingToken)
+        private async Task ProcessMessage(string messageString)
         {
             var eventMessage = JsonSerializer.Deserialize<EventMessage>(messageString, _options);
 
@@ -178,7 +178,7 @@ namespace NotificationService.Services
             {
                 using var scope = _serviceProvider.CreateScope();
                 var handler = scope.ServiceProvider.GetRequiredService<IInventoryMessageHandler>();
-                await handler.HandleMessage(eventMessage, stoppingToken);
+                await handler.HandleMessage(eventMessage);
             }
         }
 
