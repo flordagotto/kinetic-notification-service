@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36109.1 d17.14
+VisualStudioVersion = 17.14.36109.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NotificationService", "NotificationService\NotificationService.csproj", "{7F722CEC-ED75-41CE-AF0F-09B7EE0F50DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAL", "DAL\DAL.csproj", "{DF22BAFC-5382-42AF-9540-B113A91274BF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DTOs", "DTOs\DTOs.csproj", "{314F28B0-0AB6-4747-B2E6-52531D5D016D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{7F722CEC-ED75-41CE-AF0F-09B7EE0F50DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7F722CEC-ED75-41CE-AF0F-09B7EE0F50DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7F722CEC-ED75-41CE-AF0F-09B7EE0F50DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DF22BAFC-5382-42AF-9540-B113A91274BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF22BAFC-5382-42AF-9540-B113A91274BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF22BAFC-5382-42AF-9540-B113A91274BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF22BAFC-5382-42AF-9540-B113A91274BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{314F28B0-0AB6-4747-B2E6-52531D5D016D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{314F28B0-0AB6-4747-B2E6-52531D5D016D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{314F28B0-0AB6-4747-B2E6-52531D5D016D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{314F28B0-0AB6-4747-B2E6-52531D5D016D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
