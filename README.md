@@ -1,5 +1,5 @@
 # Kinetic Notification Service
-Servicio de consola para consumir eventos de RabbitMQ y registrar logs de inventario en SQLite.
+Servicio de consola para consumir eventos de RabbitMQ y registrar logs de inventario en PostgreSQL.
 
 ## Requisitos
 
@@ -12,19 +12,20 @@ Servicio de consola para consumir eventos de RabbitMQ y registrar logs de invent
 
 git clone <url-repo-notification>
 cd kinetic-notification-service
-docker-compose up --build
+docker-compose up
 
 Este `docker-compose.yml` espera que RabbitMQ ya esté corriendo (por ejemplo, desde el docker-compose de InventoryAPI). Se conecta a la misma instancia para consumir eventos.
 
-### 2. Acceder a la base SQLite
+### 2. Acceder a la base PostgreSQL
 
-El servicio usa SQLite para persistir logs en `notifications.db`.
+El servicio usa PostgreSQL para persistir logs en la base `notifications`.
 
-Podés copiar el archivo desde el contenedor y abrirlo localmente con herramientas como DB Browser SQLite.
-Tambien podes acceder desde la consola, entrando al contenedor y copiando el archivo a local. El archivo puede demorar en actualizarse en el contenedor, se recomienda esperar unos minutos luego de procesar los mensajes.
+Se puede acceder a la base usando DBeaver con las siguientes credenciales:
 
-docker ps
-docker cp notificationservice:/app/notifications.db ./notifications.db
+host: localhost
+user: postgres
+pass: postgres
+db: notifications
 
 ## Descripción de arquitectura — Notification Service
 
@@ -44,7 +45,7 @@ Conoce el proyecto DTOs.
 
 Acceso a datos con Entity Framework Core.
 
-Define la base SQLite `notifications.db`.
+Define la base PostgreSQL `notifications`.
 
 Contiene entidades, repositorios y `DbContext`.
 
@@ -68,7 +69,7 @@ Define los objetos de transferencia de datos para los mensajes provenientes de R
   - `ProductUpdated.dlq`
   - `ProductDeleted.dlq`
 
-- Cada mensaje consumido se guarda como log en la base `notifications.db` con los siguientes campos:
+- Cada mensaje consumido se guarda como log en la tabla `InventoryLog` con los siguientes campos:
   - `Id`: identificador del log.
   - `ProductId`: ID del producto.
   - `Description`: descripción legible de la operación, por ejemplo:  
@@ -99,7 +100,7 @@ Define los objetos de transferencia de datos para los mensajes provenientes de R
                              |
                              v
                          +---+----+
-                         | SQLite |
+                         | PostgreSQL |
                          +--------+
 ```
 
