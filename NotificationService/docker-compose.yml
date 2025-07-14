@@ -12,6 +12,22 @@ services:
     networks:
       - inventoryapi_default
     restart: on-failure
+  postgres:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: notifications
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - inventoryapi_default 
+
+volumes:
+  postgres_data:
 
 networks:
   inventoryapi_default:

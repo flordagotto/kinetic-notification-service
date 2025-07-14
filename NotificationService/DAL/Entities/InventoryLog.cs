@@ -6,7 +6,7 @@
         public Guid ProductId { get; set; }
         public string Description { get; set; } = null!;
         public InventoryEventType EventType { get; set; }
-        public DateTime EventDate { get; set; }
+        public DateTimeOffset EventDate { get; set; }
     }
 
     public enum InventoryEventType
