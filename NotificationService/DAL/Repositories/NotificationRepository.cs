@@ -7,14 +7,9 @@ namespace DAL.Repositories
         Task Add(InventoryLog log);
     }
 
-    public class NotificationRepository : INotificationRepository
+    public class NotificationRepository(NotificationsDbContext context) : INotificationRepository
     {
-        private readonly NotificationsDbContext _context;
-
-        public NotificationRepository(NotificationsDbContext context)
-        {
-            _context = context;
-        }
+        private readonly NotificationsDbContext _context = context;
 
         public async Task Add(InventoryLog log)
         {
