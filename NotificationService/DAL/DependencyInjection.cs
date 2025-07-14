@@ -6,14 +6,12 @@ namespace DAL
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, string connectionString)
+        public static void AddInfrastructureServices(this IServiceCollection services, string connectionString)
         {
             services.AddDbContext<NotificationsDbContext>(options =>
-                 options.UseSqlite(connectionString));
+                 options.UseNpgsql(connectionString));
 
             services.AddScoped<INotificationRepository, NotificationRepository>();
-
-            return services;
         }
     }
 }
