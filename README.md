@@ -11,8 +11,10 @@ Servicio de consola para consumir eventos de RabbitMQ y registrar logs de invent
 ### 1. Clonar repo
 
 git clone <url-repo-notification>
-cd kinetic-notification-service
-docker-compose up
+
+cd kinetic-notification-service/NotificationService
+
+docker compose up
 
 Este `docker-compose.yml` espera que RabbitMQ ya esté corriendo (por ejemplo, desde el docker-compose de InventoryAPI). Se conecta a la misma instancia para consumir eventos.
 
