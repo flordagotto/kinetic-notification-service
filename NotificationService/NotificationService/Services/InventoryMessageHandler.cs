@@ -42,11 +42,6 @@ namespace NotificationService.Services
         {
             var description = "The inventory was modified - ";
 
-            if (message.EventType == ProductEventType.Deleted)
-            {
-                return $"{description}Product with id {message.ProductId} has been deleted.";
-            }
-
             return $"{description}Product with id {message.ProductId} has been {message.EventType}. Check the Inventory Database to see the new values.";
         }
 
