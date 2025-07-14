@@ -18,7 +18,6 @@ namespace NotificationService.Services
         private readonly ILogger<RabbitMqConsumer> _logger;
         private readonly IConfiguration _configuration;
         private readonly IServiceProvider _serviceProvider;
-        private readonly int MaximumRetries;
 
         private readonly ConnectionFactory _factory;
         private readonly AsyncPolicyWrap _policyWrap;
@@ -26,11 +25,13 @@ namespace NotificationService.Services
         private IConnection _connection;
         private IChannel _channel;
 
-        private const string PRODUCT_CREATED_QUEUE = "ProductCreated";
-        private const string PRODUCT_UPDATED_QUEUE = "ProductUpdated";
-        private const string PRODUCT_DELETED_QUEUE = "ProductDeleted";
+        private readonly string _productCreatedQueue;
+        private readonly string _productUpdatedQueue;
+        private readonly string _productDeletedQueue;
 
-        private const string EXCHANGE_NAME = "inventory_exchange";
+        private readonly string _exchangeName;
+
+        private readonly int _maximumRetries;
 
         public RabbitMqConsumer(ILogger<RabbitMqConsumer> logger, IConfiguration configuration, IServiceProvider serviceProvider)
         {
@@ -43,19 +44,27 @@ namespace NotificationService.Services
             _configuration = configuration;
             _serviceProvider = serviceProvider;
 
-            MaximumRetries = int.Parse(_configuration["RabbitMQ:MaximumRetries"]);
+            _productCreatedQueue = _configuration["RabbitMQ:Queues:ProductCreatedQueue"] ?? throw new InvalidOperationException("RabbitMQ:Queues:ProductCreatedQueue is not configured.");
+            _productUpdatedQueue = _configuration["RabbitMQ:Queues:ProductUpdatedQueue"] ?? throw new InvalidOperationException("RabbitMQ:Queues:ProductUpdatedQueue is not configured.");
+            _productDeletedQueue = _configuration["RabbitMQ:Queues:ProductDeletedQueue"] ?? throw new InvalidOperationException("RabbitMQ:Queues:ProductDeletedQueue is not configured.");
+
+            _exchangeName = _configuration["RabbitMQ:ExchangeName"] ?? throw new InvalidOperationException("RabbitMQ:ExchangeName is not configured.");
+
+            _maximumRetries = int.Parse(_configuration["RabbitMQ:MaximumRetries"] ?? "3");
 
             _factory = new ConnectionFactory()
             {
-                HostName = _configuration["RabbitMQ:HostName"],
+                HostName = _configuration["RabbitMQ:HostName"] ?? throw new InvalidOperationException("RabbitMQ:HostName is not configured."),
                 Port = int.Parse(_configuration["RabbitMQ:Port"] ?? "5672"),
-                UserName = _configuration["RabbitMQ:UserName"],
-                Password = _configuration["RabbitMQ:Password"]
+                UserName = _configuration["RabbitMQ:UserName"]?? throw new InvalidOperationException("RabbitMQ:UserName is not configured."),
+                Password = _configuration["RabbitMQ:Password"]?? throw new InvalidOperationException("RabbitMQ:Password is not configured.")
             };
+
+            var retryCount = int.Parse(_configuration["RabbitMQ:RetryCount"] ?? "5");
 
             var retryPolicy = Policy
             .Handle<Exception>()
-            .WaitAndRetryAsync(5, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+            .WaitAndRetryAsync(retryCount, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
 
             var circuitBreakerPolicy = Policy
                 .Handle<Exception>()
@@ -85,12 +94,12 @@ namespace NotificationService.Services
 
             var queues = new[]
                 {
-                    PRODUCT_CREATED_QUEUE,
-                    PRODUCT_UPDATED_QUEUE,
-                    PRODUCT_DELETED_QUEUE,
+                    _productCreatedQueue,
+                    _productUpdatedQueue,
+                    _productDeletedQueue,
                 };
 
-            await _channel.ExchangeDeclareAsync(EXCHANGE_NAME, ExchangeType.Direct, durable: true);
+            await _channel.ExchangeDeclareAsync(_exchangeName, ExchangeType.Direct, durable: true);
 
             var consumer = new AsyncEventingBasicConsumer(_channel);
 
@@ -116,12 +125,12 @@ namespace NotificationService.Services
                 }
                 catch (Exception ex)
                 {
-                    if (retries < MaximumRetries)
+                    if (retries < _maximumRetries)
                     {
-                        _logger.LogInformation($"Retrying ({retries + 1}/{MaximumRetries}).");
+                        _logger.LogInformation($"Retrying ({retries + 1}/{_maximumRetries}).");
 
                         await _channel.BasicPublishAsync(
-                            EXCHANGE_NAME,
+                            _exchangeName,
                             routingKey,
                             mandatory: true,
                             basicProperties: new BasicProperties
@@ -146,7 +155,7 @@ namespace NotificationService.Services
                         var failedBody = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(failedMessage));
 
                         await _channel.BasicPublishAsync(
-                            EXCHANGE_NAME,
+                            _exchangeName,
                             $"{routingKey}.dlq",
                             mandatory: true,
                             basicProperties: new BasicProperties

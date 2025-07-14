@@ -30,7 +30,7 @@ internal class Program
         using (var scope = host.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<NotificationsDbContext>();
-            db.Database.Migrate();
+            await db.Database.MigrateAsync();
         }
 
         await host.RunAsync();

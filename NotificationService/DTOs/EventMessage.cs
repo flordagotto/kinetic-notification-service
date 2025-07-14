@@ -2,9 +2,9 @@
 {
     public class EventMessage
     {
-        public Guid ProductId { get; set; }
-        public ProductEventType EventType { get; set; }
-        public DateTime EventDate { get; set; }
+        public Guid ProductId { get; init; }
+        public ProductEventType EventType { get; init; }
+        public DateTime EventDate { get; init; }
     }
 
     public enum ProductEventType
